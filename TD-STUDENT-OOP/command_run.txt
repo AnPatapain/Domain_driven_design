@@ -1,0 +1,6 @@
+gcc ApplicationLayer/DigitalWheel/digital_wheel_app_service.c DomainLayer/DigitalWheel/digital_wheel.c DomainLayer/Generator/generator.c -I./DomainLayer/Generic/ -I./ApplicationLayer/DigitalWheel -I./DomainLayer/DigitalWheel  UserInterfaceLayer/DigitalWheel/dwApp.c -o digital_wheel
+
+
+
+gcc ApplicationLayer/CircularBuffer/circular_buffer_app_service.c DomainLayer/CircularBuffer/circular_buffer.c DomainLayer/Generator/generator.c -I./ApplicationLayer/CircularBuffer -I./DomainLayer/CircularBuffer -I./DomainLayer/Generator -I./DomainLayer/Generic UserInterfaceLayer/CircularBuffer/cbApp.c -o circular_buffer
+

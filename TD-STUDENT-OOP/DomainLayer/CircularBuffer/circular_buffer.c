@@ -45,7 +45,7 @@ void circularBuffer_set_current_to_head(circular_buffer self)
 }
 
 char circularBuffer_get_char_before_current(circular_buffer self)
-
+{
     // TO COMPLETE :
     //Mon Business est le suivant:
     // si curseur current se trouve après tail , on décrémente current
