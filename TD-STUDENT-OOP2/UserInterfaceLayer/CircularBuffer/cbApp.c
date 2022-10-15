@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
 #include "circular_buffer_app_service.h"
 
 #define DESTROY_CIRCULAR_BUFFER '!'
@@ -17,7 +18,7 @@ static void prompt()
     puts("At any time you could input a string of char then Enter, e.g, [1]: 1234 ");
     puts("*************************************************************************");
     puts("********************************************************************************************************");
-    puts("* Menu [ n: new instance, > : current<-head, < : read char before, ! : destroy instance , Ctr-D: Quit] *");
+    puts("* Menu [ n: new instance, > : current<-head, s: Save, < : read char before, ! : destroy instance , Ctr-D: Quit] *");
     puts("********************************************************************************************************");
 }
 

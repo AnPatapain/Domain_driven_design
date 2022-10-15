@@ -7,6 +7,8 @@
 #define GO_TO_HEAD '>'
 #define DISPLAY_PRECEDENT '<'
 #define NEW_CIRCULAR_BUFFER 'n'
+#define SAVE 's'
+#define READ 'r'
 
 #define CIRCULAR_BUFFER_LENGTH 6
 

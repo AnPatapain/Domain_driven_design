@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
 #include "circular_buffer_app_service.h"
+#include "i_circular_buffer_repository.h"
+
+#define FILE_DB_REPO "../Persistence/FileDB/BUFFER"
 
 static circular_buffer cb;
 //static circular_buffer cb;
@@ -36,6 +40,15 @@ void CircularBufferAppService_run_use_case(int c)
 
     case NEW_CIRCULAR_BUFFER:
         create(CIRCULAR_BUFFER_LENGTH);
+        break;
+
+    case SAVE:
+        ICircularBufferRepository_save(cb);
+        ICircularBufferRepository_close();
+        printf("\nSAVED\n");
+        break;
+
+    case READ:
         break;
 
     case '\n':
