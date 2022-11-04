@@ -7,7 +7,7 @@
 #include "i_circular_buffer.h"
 #define INDEX_SUFFIX ".ndx"
 #define DATA_SUFFIX ".rec"
-#define FILE_DB_REPO "../Persistence/FileDB/BUFFER"
+#define FILE_DB_REPO "./Persistence/FileDB/BUFFER"
 
 /*
 #ifndef I_CIRCULAR_BUFFER_REPOSITORY_H
@@ -69,7 +69,6 @@ int ICircularBufferRepository_save(circular_buffer circular_buffer)
     if(!ICircularBufferRepository_open(FILE_DB_REPO)){
         return 0;
     }
-    printf("\nCrash here\n");
     ICircularBufferRepository_append(circular_buffer);
     return 1;
 }
@@ -89,13 +88,12 @@ static FILE *auxiliary_open(char *prefix, char *suffix)
     strncpy(name + prefix_length, suffix, suffix_length + 1);
 
     //FOR FIXING
-    printf("\n%s\n", name);
+    printf("\nstore in: %s\n", name);
 
     FILE *stream = fopen(name, "r+");
     if (stream == NULL)
         stream = fopen(name, "w+");
     if (stream == NULL){
-        printf("\nNgon ngu chet tiet !!!!!!!\n");
         perror(name);
     }
         
@@ -122,30 +120,50 @@ void ICircularBufferRepository_append(circular_buffer record)
     -Write record into data_stream
     -Write position where record is written in data_stream and where it stop in index_stream
     */
+   circular_buffer temp_buffer_write = record;
    struct index index;
    //int myRecord[5] = {record->current, record->head, record->isFull, record->length, record->tail};
    
-   fseek(data_stream, 0L, SEEK_END);
+   fseek(data_stream, 0L, SEEK_SET);
 
    index.recordStart = ftell(data_stream);
    index.recordLength = sizeof(record);
 
-   fwrite(record, sizeof(circular_buffer), 1, data_stream);
+   printf("\nindex.recordStart: %ld\n", index.recordStart);
+   printf("\nindex.recordLength: %ld\n", index.recordLength);
 
-   fseek(index_stream, 0L, SEEK_END);
-   fwrite(&index, sizeof(index), 1, index_stream);
+   fwrite(temp_buffer_write, sizeof(struct circular_buffer), 1, data_stream);
+
+//    printf("\ntemp_buffer_write inside append: %c\n", CircularBuffer_get_char_before_current(temp_buffer_write));
+
+   fseek(index_stream, 0L, SEEK_SET);
+
+   fwrite(&index, sizeof(struct index), 1, index_stream);
+
+   // Test file reading
+//    struct index index_read;
+//    fseek(index_stream, 0L, SEEK_SET);
+//    fread(&index_read, sizeof(struct index), 1, index_stream);
+//    printf("\nindex_read.recordStart: %ld\n", index_read.recordStart);
+//    printf("\nindex_read.recordLength: %ld\n", index_read.recordLength);
+//    fseek(data_stream, index_read.recordStart, SEEK_SET);
+//    circular_buffer temp_buffer_read = (struct circular_buffer*)malloc(sizeof(struct circular_buffer));
+//    fread(temp_buffer_read, sizeof(struct circular_buffer), 1, data_stream);
+//    printf("\ntemp_buffer_read inside get: %c\n", CircularBuffer_get_char_before_current(temp_buffer_read));
 }
 
 circular_buffer ICircularBufferRepository_get()
 {
-    struct index index;
-    fread(&index, sizeof(index), 1, index_stream);
-    fseek(data_stream, index.recordStart, SEEK_SET);
-
-    circular_buffer buffer;
-    fread(buffer, sizeof(buffer), 1, data_stream);
-    return buffer;
-    // circular_buffer circular_buffer = CircularBuffer_construct()
+    struct index index_read;
+    fseek(index_stream, 0L, SEEK_SET);
+    fread(&index_read, sizeof(struct index), 1, index_stream);
+    printf("\nindex_read.recordStart: %ld\n", index_read.recordStart);
+    printf("\nindex_read.recordLength: %ld\n", index_read.recordLength);
+    fseek(data_stream, index_read.recordStart, SEEK_SET);
+    circular_buffer temp_buffer_read = (struct circular_buffer*)malloc(sizeof(struct circular_buffer));
+    fread(temp_buffer_read, sizeof(struct circular_buffer), 1, data_stream);
+    // printf("\ntemp_buffer_read inside get: %c\n", CircularBuffer_get_char_before_current(temp_buffer_read));
+    return temp_buffer_read;
 }
 
 // digital_wheel IDigitalWheelRepository_get_nth_wheel(int rank)

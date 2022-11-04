@@ -5,7 +5,7 @@
 #include "circular_buffer_app_service.h"
 #include "i_circular_buffer_repository.h"
 
-#define FILE_DB_REPO "../Persistence/FileDB/BUFFER"
+#define FILE_DB_REPO "./Persistence/FileDB/BUFFER"
 
 static circular_buffer cb;
 //static circular_buffer cb;
@@ -45,10 +45,21 @@ void CircularBufferAppService_run_use_case(int c)
     case SAVE:
         ICircularBufferRepository_save(cb);
         ICircularBufferRepository_close();
-        printf("\nSAVED\n");
+        printf("\n SUCESSFULLY SAVED\n");
+        // printf("\nSUCESSFULLY SAVED address object cb: %c\n", CircularBuffer_get_char_before_current(cb));
         break;
 
     case READ:
+        if (ICircularBufferRepository_open(FILE_DB_REPO)) {
+            circular_buffer temp_cb = ICircularBufferRepository_get();
+            cb = temp_cb;
+            printf("\nSUCESSFULLY READ\n");
+            // printf("\nREAD SUCESSFULLY address object cb: %c\n", CircularBuffer_get_char_before_current(cb));
+        }
+        else {
+            printf("\ncan not retrieve to database\n");
+        }
+        
         break;
 
     case '\n':
