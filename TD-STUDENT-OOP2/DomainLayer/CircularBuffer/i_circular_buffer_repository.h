@@ -7,17 +7,12 @@ CLASS(circular_buffer);
 
 int ICircularBufferRepository_save(circular_buffer circular_buffer);
 
-// circular_buffer ICircularBufferRepository_get_nth_wheel(int rank);
-
-// int ICircularBufferRepository_delete_nth_buffer(int rank);
-
 void ICircularBufferRepository_close();
 
 int ICircularBufferRepository_open();
 
-void IcircularBufferRepository_append(circular_buffer record);
+void ICircularBufferRepository_append(circular_buffer record);
 
-circular_buffer ICircularBufferRepository_get();
-// twoWheels IDigitalWheelRepository_get_nth_two_wheels(int rank);
+circular_buffer ICircularBufferRepository_get_nth_buffer(int);
 
 #endif

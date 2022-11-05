@@ -9,29 +9,13 @@
 #define DATA_SUFFIX ".rec"
 #define FILE_DB_REPO "./Persistence/FileDB/BUFFER"
 
-/*
-#ifndef I_CIRCULAR_BUFFER_REPOSITORY_H
-#define I_CIRCULAR_BUFFER_REPOSITORY_H
-
-#include "class.h"
-
-CLASS(circular_buffer);
-
-int ICircularBufferRepository_save(circular_buffer circular_buffer);
-
-// circular_buffer ICircularBufferRepository_get_nth_wheel(int rank);
-
-// int ICircularBufferRepository_delete_nth_buffer(int rank);
-
-void ICircularBufferRepository_close();
-
-int ICircularBufferRepository_open();
-
-void IcircularBufferRepository_append(circular_buffer record);
-// twoWheels IDigitalWheelRepository_get_nth_two_wheels(int rank);
-
-#endif
-*/
+struct RECORD_CB
+{
+    unsigned long data_length;
+    int offset_head;
+    int offset_current;
+    char data[1000]; //new in c99 !!
+};
 
 struct circular_buffer
 {
@@ -42,7 +26,6 @@ struct circular_buffer
     bool isFull;
 };
 
-
 struct index
 {
     long recordStart;
@@ -51,18 +34,6 @@ struct index
 
 static FILE *index_stream;
 static FILE *data_stream;
-
-// int IDigitalWheelRepository_save(twoWheels two)
-// {
-//     digital_wheel w1 = two->wheel1;
-//     digital_wheel w2 = two->wheel2;
-//     if (!IDigitalWheelRepository_open(FILE_DB_REPO))
-//         return 0;
-//     IDigitalWheelRepository_append(w1);
-//     IDigitalWheelRepository_append(w2);
-
-//     return 1;
-// }
 
 int ICircularBufferRepository_save(circular_buffer circular_buffer)
 {
@@ -86,9 +57,6 @@ static FILE *auxiliary_open(char *prefix, char *suffix)
     char name[prefix_length + suffix_length + 1];
     strncpy(name, prefix, prefix_length);
     strncpy(name + prefix_length, suffix, suffix_length + 1);
-
-    //FOR FIXING
-    printf("\nstore in: %s\n", name);
 
     FILE *stream = fopen(name, "r+");
     if (stream == NULL)
@@ -114,74 +82,71 @@ int ICircularBufferRepository_open(char *name)
     return 1;
 }
 
-void ICircularBufferRepository_append(circular_buffer record)
-{
-    /* TO COMPLETE
-    -Write record into data_stream
-    -Write position where record is written in data_stream and where it stop in index_stream
-    */
-   circular_buffer temp_buffer_write = record;
-   struct index index;
-   //int myRecord[5] = {record->current, record->head, record->isFull, record->length, record->tail};
-   
-   fseek(data_stream, 0L, SEEK_SET);
+void ICircularBufferRepository_append(circular_buffer buffer_to_save) {
+    struct RECORD_CB* record = (struct RECORD_CB*)malloc(sizeof(struct RECORD_CB));
 
-   index.recordStart = ftell(data_stream);
-   index.recordLength = sizeof(record);
+    //Store offset
+    record->data_length = buffer_to_save->length;
+    record->offset_head = (buffer_to_save->head - buffer_to_save->tail)/sizeof(char);
+    record->offset_current = (buffer_to_save->current - buffer_to_save->tail)/sizeof(char);
+    
+    //Store data
+    char *traversing_temp = buffer_to_save->head - 1;
+    int i = record->offset_head - 1;
+    while(traversing_temp != buffer_to_save->tail - 1){
+        record->data[i] = *traversing_temp--;
+        i -= 1;
+    }
 
-   printf("\nindex.recordStart: %ld\n", index.recordStart);
-   printf("\nindex.recordLength: %ld\n", index.recordLength);
+    //Save to persistence database
+    struct index index;
+    fseek(data_stream, 0L, SEEK_END);
+    index.recordStart = ftell(data_stream);
+    index.recordLength = sizeof(struct RECORD_CB);
+    fwrite(record, sizeof(struct RECORD_CB), 1, data_stream);
+    fseek(index_stream, 0L, SEEK_END);
+    fwrite(&index, sizeof(struct index), 1, index_stream);
 
-   fwrite(temp_buffer_write, sizeof(struct circular_buffer), 1, data_stream);
+    // FOR TESTING
+    // printf("\nindex start: %d, index length: %d\n", index.recordStart, index.recordLength);
+    // printf("\ninside Iappend\n");
+    // printf("data_length: %d offset_head: %d offset_current: %d", record->data_length, record->offset_head, record->offset_current);
+    // printf("\ndata\n");
+    // for(int j=0; j < record->offset_head; j++) {
+    //     printf("\n%c\n", record->data[j]);
+    // }
 
-//    printf("\ntemp_buffer_write inside append: %c\n", CircularBuffer_get_char_before_current(temp_buffer_write));
-
-   fseek(index_stream, 0L, SEEK_SET);
-
-   fwrite(&index, sizeof(struct index), 1, index_stream);
-
-   // Test file reading
-//    struct index index_read;
-//    fseek(index_stream, 0L, SEEK_SET);
-//    fread(&index_read, sizeof(struct index), 1, index_stream);
-//    printf("\nindex_read.recordStart: %ld\n", index_read.recordStart);
-//    printf("\nindex_read.recordLength: %ld\n", index_read.recordLength);
-//    fseek(data_stream, index_read.recordStart, SEEK_SET);
-//    circular_buffer temp_buffer_read = (struct circular_buffer*)malloc(sizeof(struct circular_buffer));
-//    fread(temp_buffer_read, sizeof(struct circular_buffer), 1, data_stream);
-//    printf("\ntemp_buffer_read inside get: %c\n", CircularBuffer_get_char_before_current(temp_buffer_read));
 }
 
-circular_buffer ICircularBufferRepository_get()
-{
+circular_buffer ICircularBufferRepository_get_nth_buffer(int rank) {
+    //retrieve index stored in BUFFER.ndx
     struct index index_read;
-    fseek(index_stream, 0L, SEEK_SET);
+    int file_pointer_shift = sizeof(index_read) * (rank-1);
+    fseek(index_stream, file_pointer_shift, SEEK_SET);
     fread(&index_read, sizeof(struct index), 1, index_stream);
-    printf("\nindex_read.recordStart: %ld\n", index_read.recordStart);
-    printf("\nindex_read.recordLength: %ld\n", index_read.recordLength);
+
+    //retrieve record stored in form of struct RECORD_CB in BUFFER.rec
     fseek(data_stream, index_read.recordStart, SEEK_SET);
-    circular_buffer temp_buffer_read = (struct circular_buffer*)malloc(sizeof(struct circular_buffer));
-    fread(temp_buffer_read, sizeof(struct circular_buffer), 1, data_stream);
-    // printf("\ntemp_buffer_read inside get: %c\n", CircularBuffer_get_char_before_current(temp_buffer_read));
-    return temp_buffer_read;
+    struct RECORD_CB* record = (struct RECORD_CB*)malloc(sizeof(struct RECORD_CB));
+    fread(record, sizeof(struct RECORD_CB), 1, data_stream);
+
+    //Construct buffer based on record
+    circular_buffer buffer = (circular_buffer)malloc(sizeof(struct circular_buffer));
+    buffer = CircularBuffer_construct(record->data_length);
+
+    for(int i=0; i < record->offset_head; i++) {
+        CircularBuffer_append_char_at_head(buffer, record->data[i]);
+    }
+
+    //FOR TESTING
+    // printf("\ninside Iget\n");
+    // printf("\nindex start: %d, index length: %d\n", index_read.recordStart, index_read.recordLength);
+    // printf("data_length: %d offset_head: %d offset_current: %d", record->data_length, record->offset_head, record->offset_current);
+    // printf("\ndata\n");
+    // for(int j=0; j < record->offset_head; j++) {
+    //     printf("\n%c\n", record->data[j]);
+    // }
+    
+    return buffer;
 }
 
-// digital_wheel IDigitalWheelRepository_get_nth_wheel(int rank)
-// {
-//     struct index index;
-//     long shift = (rank - 1) * sizeof index;
-//     fseek(index_stream, shift, SEEK_SET);
-//     fread(&index, sizeof index, 1, index_stream);
-//     fseek(data_stream, index.recordStart, SEEK_SET);
-//     int myRecord[3];
-
-//     fread(myRecord, sizeof myRecord, 1, data_stream);
-//     //digital_wheel dw = malloc(sizeof(struct digital_wheel));
-//     digital_wheel dw = DigitalWheel_construct(myRecord[0], myRecord[1]);
-//     DigitalWheel_change_current_position(dw, myRecord[2]);
-
-//     //dw->start = myRecord[0];
-//     //dw->end = myRecord[1];
-//     //dw->current = myRecord[2];
-//     return dw;
-// }

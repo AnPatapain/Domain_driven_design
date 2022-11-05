@@ -18,7 +18,7 @@ static void prompt()
     puts("At any time you could input a string of char then Enter, e.g, [1]: 1234 ");
     puts("*************************************************************************");
     puts("********************************************************************************************************");
-    puts("* Menu [ n: new instance, > : current<-head, s: Save, < : read char before, ! : destroy instance , Ctr-D: Quit] *");
+    puts("* Menu [ n: new buffer, > : current<-head, s: SAVE, r: READ the last saved buffer < : read char before, ! : destroy instance , Ctr-D: Quit] *");
     puts("********************************************************************************************************");
 }
 
