@@ -5,7 +5,7 @@
 #include "circular_buffer_app_service.h"
 #include "i_circular_buffer_repository.h"
 
-#define FILE_DB_REPO "./Persistence/FileDB/BUFFER"
+#define FILE_DB_REPO "../Persistence/FileDB/BUFFER"
 
 static circular_buffer cb;
 //static circular_buffer cb;

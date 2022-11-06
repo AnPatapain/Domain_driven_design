@@ -7,14 +7,16 @@
 #include "i_circular_buffer.h"
 #define INDEX_SUFFIX ".ndx"
 #define DATA_SUFFIX ".rec"
-#define FILE_DB_REPO "./Persistence/FileDB/BUFFER"
+#define FILE_DB_REPO "../Persistence/FileDB/BUFFER"
+
+#define BUFFER_SIZE
 
 struct RECORD_CB
 {
     unsigned long data_length;
     int offset_head;
     int offset_current;
-    char data[1000]; //new in c99 !!
+    char data[]; //new in c99 !!
 };
 
 struct circular_buffer
@@ -83,7 +85,7 @@ int ICircularBufferRepository_open(char *name)
 }
 
 void ICircularBufferRepository_append(circular_buffer buffer_to_save) {
-    struct RECORD_CB* record = (struct RECORD_CB*)malloc(sizeof(struct RECORD_CB));
+    struct RECORD_CB* record = (struct RECORD_CB*)malloc(sizeof(struct RECORD_CB)+sizeof(char)*buffer_to_save->length);
 
     //Store offset
     record->data_length = buffer_to_save->length;
@@ -103,18 +105,9 @@ void ICircularBufferRepository_append(circular_buffer buffer_to_save) {
     fseek(data_stream, 0L, SEEK_END);
     index.recordStart = ftell(data_stream);
     index.recordLength = sizeof(struct RECORD_CB);
-    fwrite(record, sizeof(struct RECORD_CB), 1, data_stream);
+    fwrite(record, sizeof(struct RECORD_CB) + sizeof(char)*buffer_to_save->length, 1, data_stream);
     fseek(index_stream, 0L, SEEK_END);
     fwrite(&index, sizeof(struct index), 1, index_stream);
-
-    // FOR TESTING
-    // printf("\nindex start: %d, index length: %d\n", index.recordStart, index.recordLength);
-    // printf("\ninside Iappend\n");
-    // printf("data_length: %d offset_head: %d offset_current: %d", record->data_length, record->offset_head, record->offset_current);
-    // printf("\ndata\n");
-    // for(int j=0; j < record->offset_head; j++) {
-    //     printf("\n%c\n", record->data[j]);
-    // }
 
 }
 
@@ -127,25 +120,16 @@ circular_buffer ICircularBufferRepository_get_nth_buffer(int rank) {
 
     //retrieve record stored in form of struct RECORD_CB in BUFFER.rec
     fseek(data_stream, index_read.recordStart, SEEK_SET);
-    struct RECORD_CB* record = (struct RECORD_CB*)malloc(sizeof(struct RECORD_CB));
-    fread(record, sizeof(struct RECORD_CB), 1, data_stream);
+    struct RECORD_CB record;
+    fread(&record, sizeof(struct RECORD_CB) + 6*sizeof(char), 1, data_stream);
 
     //Construct buffer based on record
     circular_buffer buffer = (circular_buffer)malloc(sizeof(struct circular_buffer));
-    buffer = CircularBuffer_construct(record->data_length);
-
-    for(int i=0; i < record->offset_head; i++) {
-        CircularBuffer_append_char_at_head(buffer, record->data[i]);
+    buffer = CircularBuffer_construct(record.data_length);
+    for(int i=0; i < record.offset_head; i++) {
+        CircularBuffer_append_char_at_head(buffer, record.data[i]);
     }
-
-    //FOR TESTING
-    // printf("\ninside Iget\n");
-    // printf("\nindex start: %d, index length: %d\n", index_read.recordStart, index_read.recordLength);
-    // printf("data_length: %d offset_head: %d offset_current: %d", record->data_length, record->offset_head, record->offset_current);
-    // printf("\ndata\n");
-    // for(int j=0; j < record->offset_head; j++) {
-    //     printf("\n%c\n", record->data[j]);
-    // }
+    buffer->current += record.offset_current;
     
     return buffer;
 }
